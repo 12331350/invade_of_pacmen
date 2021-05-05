@@ -1,129 +1,181 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import pygame
+from pygame import mixer
+import random
+import math
+import time
 
-# C extensions
-*.so
+# intitulize the pygame
+pygame.init()
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# create the screen
+screen = pygame.display.set_mode([800, 450])
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+#title and icon
+pygame.display.set_caption('Invade of pacmen')
+icon = pygame.image.load('Pacman.png')
+pygame.display.set_icon(icon)
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# player
+playerImg = pygame.image.load('Ghost.png')
+playerx = 370
+playery = 350
+playerx__change = 0
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+# bullet
 
-# Translations
-*.mo
-*.pot
+# ready - you can't see the bullet on the screen
+# fire - the bullet is currently moving
+bulletImg = pygame.image.load('dot.png')
+bulletx = 0
+bullety = 350
+bulletx__change = 0
+bullety_change = 1
+bullet_state = "ready"
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+# enemy
 
-# Flask stuff:
-instance/
-.webassets-cache
+enemyImg = []
+enemyx = []
+enemyy = []
+enemyx__change = []
+enemyy_change = []
 
-# Scrapy stuff:
-.scrapy
+num_of_enemies = 6
 
-# Sphinx documentation
-docs/_build/
+for i in range(num_of_enemies):
+    enemyImg.append(pygame.image.load('Pacman.png'))
+    enemyx.append(random.randint(0, 735))
+    enemyy.append(random.randint(50, 150))
+    enemyx__change.append(0.3)
+    enemyy_change.append(40)
 
-# PyBuilder
-target/
+#start sound
+mixer.music.load('game_start.wav')
+mixer.music.play()
+time.sleep(5)
+# background
+background = pygame.image.load('Pacman_background.jpg')
+#background sound
+mixer.music.load('intermission.wav')
+mixer.music.play(-1)
+#font
+score_value = 0
+font = pygame.font.Font('zeldadxt.ttf', 32)
 
-# Jupyter Notebook
-.ipynb_checkpoints
+textx = 10
+texty = 10
 
-# IPython
-profile_default/
-ipython_config.py
+#game over text
+over_font = pygame.font.Font('Triforce.ttf' , 64)
 
-# pyenv
-.python-version
+def show_score(x, y):
+    score = font.render("score : " + str(score_value), True, (0,240,255))
+    screen.blit(score, (x, y))
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+def game_over_text():
+    over_text = over_font.render("GAME OVER", True, (0,240,255))
+    screen.blit(over_text, (200, 225))
+    
+def player(x, y):
+    screen.blit(playerImg, (x, y))
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+def enemy(x, y, i):
+    screen.blit(enemyImg[i], (x, y))
 
-# SageMath parsed files
-*.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+def fire_bullet(x, y):
+    global bullet_state
+    bullet_state = "fire"
+    screen.blit(bulletImg, (x + 20, y + 10))
 
-# Spyder project settings
-.spyderproject
-.spyproject
 
-# Rope project settings
-.ropeproject
+def isCollision(enemyx, enemyy, bulletx, bullety):
+    distance = math.sqrt((math.pow(enemyx - bulletx, 2)) +
+                         (math.pow(enemyy - bullety, 2)))
+    if distance < 27:
+        return True
+    else:
+        return False
 
-# mkdocs documentation
-/site
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# game loop
+running = True
+while running:
 
-# Pyre type checker
-.pyre/
+    # RGB - red, green, blue
+    screen.fill((154, 247, 255))
+    # backgrounhd image
+    screen.blit(background, (0, 0))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        # if keystroke is pressed check whether it is right or left
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                playerx__change = -0.3
+            if event.key == pygame.K_RIGHT:
+                playerx__change = 0.3
+            if event.key == pygame.K_SPACE:
+                if bullet_state is "ready":
+                    bullet_sound = mixer.Sound('eat_ghost.wav')
+                    bullet_sound.play()
+                    # get the current x cordnate of player
+                    bulletx = playerx
+                    fire_bullet(bulletx, bullety)
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                playerx__change = 0
+    # 5 = 5 + -0.1 -> 5= 5 -0.1
+    # 5= 5+0.1
+
+    playerx += playerx__change
+    if playerx <= 0:
+        playerx = 0
+    elif playerx >= 736:
+        playerx = 736
+    #enemy movement    
+    for i in range(num_of_enemies):
+        
+        #game over
+        if enemyy[i] > playery:
+            for j in range(num_of_enemies):
+                enemyy[j] = 2000
+            death2_sound = mixer.Sound('death_1.wav')
+            game_over_text()
+            death2_sound.play()
+            break
+        
+        enemyx[i] += enemyx__change[i]
+        if enemyx[i] <= 0:
+            enemyx__change[i] = 0.3
+            enemyy[i] += enemyy_change[i]
+        elif enemyx[i] >= 736:
+            enemyx__change[i] = -0.3
+        #collision
+        collision = isCollision(enemyx[i], enemyy[i], bulletx, bullety)
+        if collision:
+            bullety = 350
+            bullet_state = "ready"
+            score_value += 1
+            enemyx[i] = random.randint(0, 735)
+            enemyy[i] = random.randint(50, 150)
+            death_sound = mixer.Sound('death_2.wav')
+            death_sound.play()
+        else:
+            pass
+        enemy(enemyx[i], enemyy[i], i)
+
+    # bullet movement
+    if bullety <= 0:
+        bullety = 350
+        bullet_state = "ready"
+    if bullet_state is "fire":
+        fire_bullet(bulletx, bullety)
+        bullety -= bullety_change
+    else:
+        pass 
+
+    player(playerx, playery)
+    show_score(textx, texty)
+    pygame.display.update()
