@@ -1,0 +1,2 @@
+pygame package
+python 3.6
